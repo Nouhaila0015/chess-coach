@@ -18,7 +18,7 @@ import {
   resign,
   setFlow,
 } from './games.js'
-import { type Lesson, MAX_ATTEMPTS, checkAttempt, getLesson } from './lessons.js'
+import { type Lesson, MAX_ATTEMPTS, checkAttempt, getLesson, listLessons } from './lessons.js'
 import { ReviewRunner } from './reviews.js'
 import type { Tutor } from './tutor.js'
 
@@ -110,6 +110,10 @@ export function createApp({ db, frontDir, engine, tutor }: AppOptions) {
     const step = req.body?.step
     if (step !== 'lesson' && step !== 'done') throw new GameError('Étape invalide')
     res.json(publicGame(setFlow(db, id(req), step)))
+  })
+
+  app.get('/api/lessons', (_req, res) => {
+    res.json(listLessons(db).map(publicLesson))
   })
 
   app.get('/api/lessons/:id', (req, res) => {
