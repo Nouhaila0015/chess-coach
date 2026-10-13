@@ -16,13 +16,17 @@ import {
   offerDraw,
   playerMove,
   resign,
+  setFlow,
 } from './games.js'
+import { ReviewRunner } from './reviews.js'
+import type { Tutor } from './tutor.js'
 
 export interface AppOptions {
   db: Db
   // Dossier du front buildé, servi par le BFF en production.
   frontDir?: string
   engine: Engine
+  tutor: Tutor
 }
 
 // Ce que le front reçoit d'une partie : jamais d'évaluation ni de meilleur coup.
@@ -30,8 +34,9 @@ function publicGame(game: Game) {
   return game
 }
 
-export function createApp({ db, frontDir, engine }: AppOptions) {
+export function createApp({ db, frontDir, engine, tutor }: AppOptions) {
   const bot = createBot(engine)
+  const reviews = new ReviewRunner(db, engine, tutor)
   const app = express()
   app.use(express.json())
 
@@ -45,7 +50,7 @@ export function createApp({ db, frontDir, engine }: AppOptions) {
     res.json({
       elo: getElo(db),
       game: current ? publicGame(current) : null,
-      pending: pending ? { gameId: pending.id, step: pending.flow } : null,
+      pending: pending ? { gameId: pending.id, step: pending.flow, lessonId: reviews.state(pending.id).review?.lessonId ?? null } : null,
     })
   })
 
@@ -83,6 +88,21 @@ export function createApp({ db, frontDir, engine }: AppOptions) {
     const evaluate = async (fen: string) => (await engine.analyse(fen, { depth: 12, movetime: 1500 }))[0].cp
     const { accepted, game } = await offerDraw(db, id(req), evaluate)
     res.json({ accepted, game: publicGame(game) })
+  })
+
+  app.post('/api/games/:id/review', (req, res) => {
+    void reviews.start(id(req))
+    res.json(reviews.state(id(req)))
+  })
+
+  app.get('/api/games/:id/review', (req, res) => {
+    res.json({ ...reviews.state(id(req)), game: publicGame(getGame(db, id(req))) })
+  })
+
+  app.post('/api/games/:id/flow', (req, res) => {
+    const step = req.body?.step
+    if (step !== 'lesson' && step !== 'done') throw new GameError('Étape invalide')
+    res.json(publicGame(setFlow(db, id(req), step)))
   })
 
   app.get('/api/progress', (_req, res) => {

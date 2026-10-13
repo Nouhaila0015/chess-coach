@@ -232,6 +232,20 @@ export default function Play({ state, refresh }: Props) {
               Noirs
             </button>
           </div>
+          {state.pending && (
+            <div className="notice">
+              {state.pending.step === 'review' ? 'La revue de ta dernière partie n’est pas terminée.' : 'La leçon de ta dernière partie t’attend.'}{' '}
+              <a
+                href={
+                  state.pending.step === 'lesson' && state.pending.lessonId
+                    ? `#/lecon/${state.pending.lessonId}`
+                    : `#/revue/${state.pending.gameId}`
+                }
+              >
+                Reprendre
+              </a>
+            </div>
+          )}
           <button className="btn" onClick={start}>
             Jouer
           </button>
