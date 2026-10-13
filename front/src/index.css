@@ -193,3 +193,200 @@ p {
   color: var(--muted);
   font-size: 13px;
 }
+
+/* Bandeaux des joueurs */
+.player {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 52px;
+  font-weight: 600;
+  color: #fff;
+}
+.player .avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  background: #4b4946;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+.player .rating {
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 13px;
+}
+.player .captured {
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+}
+.player .captured img {
+  width: 20px;
+  height: 20px;
+  margin-left: -4px;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.35));
+}
+.player .captured img.same {
+  margin-left: -11px;
+}
+.player .captured .adv {
+  font-size: 12px;
+  color: var(--muted);
+  margin-left: 6px;
+  font-weight: 400;
+}
+
+/* Liste des coups */
+.moves {
+  flex: 1 1 0 !important;
+  min-height: 60px;
+  overflow-y: auto;
+  margin: 0 -18px 12px;
+  font-size: 14px;
+}
+.move-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 1fr;
+  padding: 3px 18px;
+  align-items: center;
+}
+.move-row:nth-child(odd) {
+  background: #2b2a27;
+}
+.move-row i {
+  font-style: normal;
+  color: #8b8987;
+}
+.move-row button {
+  background: none;
+  padding: 3px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  color: #d6d4d1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.move-row button:hover {
+  background: #3c3a37;
+}
+.move-row button.cur {
+  background: #484644;
+  color: #fff;
+}
+
+/* Accueil */
+.elo-cards {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.elo-cards div {
+  flex: 1;
+  background: var(--panel-2);
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+  font-size: 12px;
+  color: #b5b3b0;
+}
+.elo-cards b {
+  display: block;
+  font-size: 26px;
+  color: #fff;
+}
+.elo-cards .me {
+  background: #fff;
+  color: #555;
+}
+.elo-cards .me b {
+  color: var(--panel);
+}
+.choice {
+  display: flex;
+  gap: 12px;
+  margin: 8px 0 22px;
+}
+.choice button {
+  flex: 1;
+  background: var(--panel-2);
+  border-radius: 8px;
+  padding: 14px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 3px solid transparent;
+}
+.choice button.on {
+  border-color: var(--green);
+  background: #33402a;
+}
+.choice img,
+.choice .dice {
+  display: block;
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 6px;
+  font-size: 40px;
+  line-height: 48px;
+}
+
+/* Fenêtres */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.modal {
+  width: 420px;
+  background: var(--panel);
+  border-radius: 10px;
+  overflow: hidden;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+.modal .head {
+  background: var(--panel-2);
+  padding: 22px;
+}
+.modal .head h2 {
+  font-size: 26px;
+  margin: 0 0 4px;
+}
+.modal .head p {
+  margin: 0;
+}
+.modal .body {
+  padding: 24px;
+}
+.modal .body .btn + .btn {
+  margin-top: 14px;
+}
+.elo-change {
+  font-size: 44px;
+  font-weight: 800;
+  color: #fff;
+  margin: 4px 0 14px;
+}
+.elo-change small {
+  font-size: 20px;
+  margin-left: 8px;
+}
+.elo-change .up {
+  color: var(--green);
+}
+.elo-change .down {
+  color: var(--red);
+}
+.status-line {
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 20px;
+  margin: 0 0 10px;
+}

@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { get } from './api'
+import Play from './pages/Play'
 import { useRoute } from './router'
+import type { AppState } from './types'
 
-interface AppState {
-  elo: number
-}
 
 const LINKS = [
   { path: '', label: 'Jouer' },
@@ -41,10 +40,13 @@ export default function App() {
       </nav>
       <main className="content">
         {error && <p className="page error">{error}</p>}
-        <div className="page">
-          <h2>{LINKS.find((l) => l.path === section)?.label ?? 'Jouer'}</h2>
-          <p>Écran en cours de construction.</p>
-        </div>
+        {state && section === '' && <Play state={state} refresh={refresh} />}
+        {state && section !== '' && (
+          <div className="page">
+            <h2>{LINKS.find((l) => l.path === section)?.label}</h2>
+            <p>Écran en cours de construction.</p>
+          </div>
+        )}
       </main>
     </div>
   )
