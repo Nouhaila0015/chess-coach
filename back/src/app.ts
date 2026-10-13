@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { createBot } from './bot.js'
 import { type Db, getElo } from './db.js'
+import { getProgress } from './elo.js'
 import type { Engine } from './engine.js'
 import {
   type Game,
@@ -82,6 +83,10 @@ export function createApp({ db, frontDir, engine }: AppOptions) {
     const evaluate = async (fen: string) => (await engine.analyse(fen, { depth: 12, movetime: 1500 }))[0].cp
     const { accepted, game } = await offerDraw(db, id(req), evaluate)
     res.json({ accepted, game: publicGame(game) })
+  })
+
+  app.get('/api/progress', (_req, res) => {
+    res.json(getProgress(db))
   })
 
   app.use('/api', (_req, res) => {

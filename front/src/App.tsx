@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { get } from './api'
 import Play from './pages/Play'
+import Progress from './pages/Progress'
 import { useRoute } from './router'
 import type { AppState } from './types'
 
@@ -41,7 +42,8 @@ export default function App() {
       <main className="content">
         {error && <p className="page error">{error}</p>}
         {state && section === '' && <Play state={state} refresh={refresh} />}
-        {state && section !== '' && (
+        {state && section === 'progression' && <Progress />}
+        {state && section !== '' && section !== 'progression' && (
           <div className="page">
             <h2>{LINKS.find((l) => l.path === section)?.label}</h2>
             <p>Écran en cours de construction.</p>

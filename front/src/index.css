@@ -390,3 +390,31 @@ p {
   min-height: 20px;
   margin: 0 0 10px;
 }
+
+/* Progression */
+.stats {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.stats div {
+  flex: 1;
+  background: var(--panel);
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.stats b {
+  display: block;
+  font-size: 30px;
+  color: #fff;
+}
+.curve {
+  width: 100%;
+  display: block;
+}
+.curve text {
+  fill: var(--muted);
+  font-size: 12px;
+}
