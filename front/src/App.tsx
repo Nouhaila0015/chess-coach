@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { get } from './api'
 import Play from './pages/Play'
 import Progress from './pages/Progress'
+import Review from './pages/Review'
 import { useRoute } from './router'
 import type { AppState } from './types'
 
@@ -31,7 +32,7 @@ export default function App() {
           Chess<b>Coach</b>
         </div>
         {LINKS.map((l) => (
-          <a key={l.path} href={`#/${l.path}`} className={section === l.path ? 'on' : ''}>
+          <a key={l.path} href={`#/${l.path}`} className={section === l.path || (l.path === '' && section === 'revue') ? 'on' : ''}>
             {l.label}
           </a>
         ))}
@@ -43,7 +44,8 @@ export default function App() {
         {error && <p className="page error">{error}</p>}
         {state && section === '' && <Play state={state} refresh={refresh} />}
         {state && section === 'progression' && <Progress />}
-        {state && section !== '' && section !== 'progression' && (
+        {state && section === 'revue' && <Review key={route[1]} gameId={Number(route[1])} />}
+        {state && !['', 'progression', 'revue'].includes(section) && (
           <div className="page">
             <h2>{LINKS.find((l) => l.path === section)?.label}</h2>
             <p>Écran en cours de construction.</p>

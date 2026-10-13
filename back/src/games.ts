@@ -196,3 +196,11 @@ export async function offerDraw(
   }
   return { accepted: true, game: finishGame(db, getGame(db, id), 'draw', 'agreement') }
 }
+
+// Avancement après la partie : revue, puis leçon, puis terminé.
+export function setFlow(db: Db, id: number, step: 'lesson' | 'done'): Game {
+  const game = getGame(db, id)
+  if (game.status !== 'finished') throw new GameError("La partie n'est pas terminée")
+  db.prepare('UPDATE games SET flow = ? WHERE id = ?').run(step, id)
+  return getGame(db, id)
+}
