@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { get } from './api'
 import Lesson from './pages/Lesson'
+import Lessons from './pages/Lessons'
 import Play from './pages/Play'
 import Progress from './pages/Progress'
 import Review from './pages/Review'
@@ -47,12 +48,7 @@ export default function App() {
         {state && section === 'progression' && <Progress />}
         {state && section === 'revue' && <Review key={route[1]} gameId={Number(route[1])} />}
         {state && section === 'lecon' && <Lesson key={route[1]} lessonId={Number(route[1])} onDone={refresh} />}
-        {state && !['', 'progression', 'revue', 'lecon'].includes(section) && (
-          <div className="page">
-            <h2>{LINKS.find((l) => l.path === section)?.label}</h2>
-            <p>Écran en cours de construction.</p>
-          </div>
-        )}
+        {state && section === 'lecons' && <Lessons />}
       </main>
     </div>
   )
