@@ -1,0 +1,10 @@
+node_modules/
+dist/
+back/data/
+back/.env
+*.log
+.DS_Store
+chess-coach.pid
+# Copies de conflit iCloud (Bureau synchronisé)
+* 2.*
+* 2
