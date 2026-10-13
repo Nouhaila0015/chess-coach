@@ -165,8 +165,34 @@ export async function botMove(db: Db, id: number, choose: (game: Game) => Promis
   return applyMove(db, fresh, { from: uci.slice(0, 2), to: uci.slice(2, 4), promotion: uci[4] })
 }
 
-export async function randomBot(game: Game): Promise<string> {
-  const moves = new Chess(game.fen).moves({ verbose: true })
-  const m = moves[Math.floor(Math.random() * moves.length)]
-  return m.from + m.to + (m.promotion ?? '')
+export function resign(db: Db, id: number): Game {
+  const game = getGame(db, id)
+  if (game.status !== 'playing') throw new GameError('La partie est terminée')
+  return finishGame(db, game, 'loss', 'resign')
+}
+
+// Nombre de coups complets à jouer avant que l'ordi puisse accepter la nulle, et entre deux propositions.
+export const DRAW_MIN_MOVES = 20
+export const DRAW_COOLDOWN_MOVES = 10
+// L'ordi accepte si je ne suis pas en moins bonne posture que ce seuil (en centipions, de mon point de vue).
+const DRAW_MAX_DEFICIT = 50
+
+// Proposition de nulle : `evaluate` donne l'évaluation de la position pour le camp au trait.
+export async function offerDraw(
+  db: Db,
+  id: number,
+  evaluate: (fen: string) => Promise<number>,
+): Promise<{ accepted: boolean; game: Game }> {
+  const game = getGame(db, id)
+  if (game.status !== 'playing') throw new GameError('La partie est terminée')
+  if (game.turn !== game.playerColor) throw new GameError('Tu peux proposer nulle à ton tour')
+  const ply = game.moves.length
+  if (game.lastDrawOfferPly !== null && ply - game.lastDrawOfferPly < DRAW_COOLDOWN_MOVES * 2) {
+    throw new GameError(`Une seule proposition de nulle tous les ${DRAW_COOLDOWN_MOVES} coups`)
+  }
+  db.prepare('UPDATE games SET last_draw_offer_ply = ? WHERE id = ?').run(ply, id)
+  if (ply < DRAW_MIN_MOVES * 2 || (await evaluate(game.fen)) < -DRAW_MAX_DEFICIT) {
+    return { accepted: false, game: getGame(db, id) }
+  }
+  return { accepted: true, game: finishGame(db, getGame(db, id), 'draw', 'agreement') }
 }

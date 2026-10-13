@@ -1,7 +1,9 @@
 import express, { type NextFunction, type Request, type Response } from 'express'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { createBot } from './bot.js'
 import { type Db, getElo } from './db.js'
+import type { Engine } from './engine.js'
 import {
   type Game,
   GameError,
@@ -10,16 +12,16 @@ import {
   getCurrentGame,
   getGame,
   getPendingGame,
+  offerDraw,
   playerMove,
-  randomBot,
+  resign,
 } from './games.js'
 
 export interface AppOptions {
   db: Db
   // Dossier du front buildé, servi par le BFF en production.
   frontDir?: string
-  // Choix du coup de l'ordi (remplaçable dans les tests).
-  bot?: (game: Game) => Promise<string>
+  engine: Engine
 }
 
 // Ce que le front reçoit d'une partie : jamais d'évaluation ni de meilleur coup.
@@ -27,7 +29,8 @@ function publicGame(game: Game) {
   return game
 }
 
-export function createApp({ db, frontDir, bot = randomBot }: AppOptions) {
+export function createApp({ db, frontDir, engine }: AppOptions) {
+  const bot = createBot(engine)
   const app = express()
   app.use(express.json())
 
@@ -69,6 +72,16 @@ export function createApp({ db, frontDir, bot = randomBot }: AppOptions) {
       thinking.set(gameId, job)
     }
     res.json(publicGame(await job))
+  })
+
+  app.post('/api/games/:id/resign', (req, res) => {
+    res.json(publicGame(resign(db, id(req))))
+  })
+
+  app.post('/api/games/:id/draw', async (req, res) => {
+    const evaluate = async (fen: string) => (await engine.analyse(fen, { depth: 12, movetime: 1500 }))[0].cp
+    const { accepted, game } = await offerDraw(db, id(req), evaluate)
+    res.json({ accepted, game: publicGame(game) })
   })
 
   app.use('/api', (_req, res) => {

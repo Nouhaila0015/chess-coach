@@ -26,6 +26,8 @@ export default function Play({ state, refresh }: Props) {
   const [nonce, setNonce] = useState(0)
   const [error, setError] = useState('')
   const [modalClosed, setModalClosed] = useState(false)
+  const [confirmResign, setConfirmResign] = useState(false)
+  const [notice, setNotice] = useState('')
   const busy = useRef(false)
   const sounded = useRef({ id: game?.id, count: game?.moves.length ?? 0 })
 
@@ -85,6 +87,7 @@ export default function Play({ state, refresh }: Props) {
   const send = async (from: string, to: string, promo?: string) => {
     if (!game) return
     setError('')
+    setNotice('')
     // Affichage immédiat du coup, confirmé ensuite par le BFF.
     const chess = new Chess(game.fen)
     const m = chess.move({ from, to, promotion: promo })
@@ -97,6 +100,33 @@ export default function Play({ state, refresh }: Props) {
     } catch (e) {
       sounded.current = { id: game.id, count: game.moves.length }
       setGame(game)
+      fail(e as Error)
+    }
+  }
+
+  const resign = async () => {
+    if (!game) return
+    setConfirmResign(false)
+    try {
+      setGame(await post<Game>(`/api/games/${game.id}/resign`))
+      play('end')
+    } catch (e) {
+      fail(e as Error)
+    }
+  }
+
+  const offerDraw = async () => {
+    if (!game) return
+    setError('')
+    try {
+      const r = await post<{ accepted: boolean; game: Game }>(`/api/games/${game.id}/draw`)
+      setGame(r.game)
+      if (r.accepted) play('end')
+      else {
+        setNotice("L'ordi refuse la nulle.")
+        play('error')
+      }
+    } catch (e) {
       fail(e as Error)
     }
   }
@@ -217,6 +247,8 @@ export default function Play({ state, refresh }: Props) {
               <span className="error">{error}</span>
             ) : finished ? (
               `${TITLES[game.result!]} ${REASONS[game.reason!]}`
+            ) : notice ? (
+              notice
             ) : myTurn ? (
               'À toi de jouer.'
             ) : (
@@ -232,11 +264,39 @@ export default function Play({ state, refresh }: Props) {
               ▶
             </button>
           </div>
-          {finished && (
+          {finished ? (
             <button className="btn small" onClick={() => setModalClosed(false)}>
               Voir le résultat
             </button>
+          ) : (
+            <div className="row">
+              <button className="btn grey" onClick={offerDraw} disabled={!myTurn}>
+                ½ Proposer nulle
+              </button>
+              <button className="btn grey" onClick={() => setConfirmResign(true)}>
+                ⚑ Abandonner
+              </button>
+            </div>
           )}
+        </div>
+      )}
+
+      {confirmResign && (
+        <div className="overlay">
+          <div className="modal">
+            <div className="head">
+              <h2>Abandonner ?</h2>
+              <p>L'abandon compte comme une défaite.</p>
+            </div>
+            <div className="body">
+              <button className="btn" onClick={() => setConfirmResign(false)}>
+                Continuer la partie
+              </button>
+              <button className="btn grey" onClick={resign}>
+                Oui, j'abandonne
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
