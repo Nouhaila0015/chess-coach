@@ -1,6 +1,7 @@
 import { Chess } from 'chess.js'
 import type { Db } from './db.js'
 import { getElo } from './db.js'
+import { newElo } from './elo.js'
 
 export type Color = 'w' | 'b'
 export type Result = 'win' | 'loss' | 'draw'
@@ -119,13 +120,12 @@ function drawReason(chess: Chess): Reason | null {
 export function finishGame(db: Db, game: Game, result: Result, reason: Reason): Game {
   const playerMoves = game.moves.filter((_, i) => (i % 2 === 0) === (game.playerColor === 'w')).length
   const flow = playerMoves >= MIN_PLAYER_MOVES_FOR_REVIEW ? 'review' : 'done'
-  db.prepare("UPDATE games SET status = 'finished', ended_at = ?, result = ?, reason = ?, flow = ? WHERE id = ?").run(
-    new Date().toISOString(),
-    result,
-    reason,
-    flow,
-    game.id,
-  )
+  // L'Elo est mis à jour dès la fin de la partie, que la revue soit faite ou non.
+  const eloAfter = newElo(getElo(db), game.botElo, result)
+  db.prepare(
+    "UPDATE games SET status = 'finished', ended_at = ?, result = ?, reason = ?, flow = ?, elo_after = ? WHERE id = ?",
+  ).run(new Date().toISOString(), result, reason, flow, eloAfter, game.id)
+  db.prepare('UPDATE profile SET elo = ? WHERE id = 1').run(eloAfter)
   return getGame(db, game.id)
 }
 
