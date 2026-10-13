@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { get } from './api'
+import Lesson from './pages/Lesson'
 import Play from './pages/Play'
 import Progress from './pages/Progress'
 import Review from './pages/Review'
@@ -32,7 +33,7 @@ export default function App() {
           Chess<b>Coach</b>
         </div>
         {LINKS.map((l) => (
-          <a key={l.path} href={`#/${l.path}`} className={section === l.path || (l.path === '' && section === 'revue') ? 'on' : ''}>
+          <a key={l.path} href={`#/${l.path}`} className={section === l.path || (l.path === '' && (section === 'revue' || section === 'lecon')) ? 'on' : ''}>
             {l.label}
           </a>
         ))}
@@ -45,7 +46,8 @@ export default function App() {
         {state && section === '' && <Play state={state} refresh={refresh} />}
         {state && section === 'progression' && <Progress />}
         {state && section === 'revue' && <Review key={route[1]} gameId={Number(route[1])} />}
-        {state && !['', 'progression', 'revue'].includes(section) && (
+        {state && section === 'lecon' && <Lesson key={route[1]} lessonId={Number(route[1])} onDone={refresh} />}
+        {state && !['', 'progression', 'revue', 'lecon'].includes(section) && (
           <div className="page">
             <h2>{LINKS.find((l) => l.path === section)?.label}</h2>
             <p>Écran en cours de construction.</p>
