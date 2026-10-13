@@ -77,7 +77,7 @@ export function fallbackTexts({ game, review, lesson }: TutorContext): TutorText
     comments,
     lesson: {
       title: `Mon plus mauvais coup : ${moveLabel(worst)}`,
-      explanation: `Dans cette position, tu as joué ${sanFr(lesson.played.san)}. La suite ${lineFr(lesson.ply, lesson.punishLine)} est mauvaise pour toi. Le meilleur coup était ${sanFr(lesson.best.san)}.`,
+      explanation: `Dans cette position, tu as joué ${sanFr(lesson.played.san)}. La suite ${lineFr(lesson.ply, lesson.punishLine)} est mauvaise pour toi. Un autre coup était bien meilleur : à toi de le trouver dans l'exercice.`,
       principle: 'Avant de jouer, regarde les réponses de ton adversaire : échecs, captures et menaces.',
       hints: [
         `Le bon coup se joue avec ${PIECE_NAMES[piece?.type ?? 'p']}.`,
@@ -111,7 +111,7 @@ Ce que tu dois produire :
 - comments : un commentaire pour chacun des coups de l'élève listés dans « coups », avec le même « ply ». Une à deux phrases chacun. Pour un bon coup, dis ce qu'il accomplit. Pour un coup faible, dis ce qui ne va pas et quel était le meilleur coup. Varie les tournures d'un coup à l'autre.
 - lesson : la leçon porte sur le coup indiqué dans « lecon », le plus mauvais de l'élève.
   - title : un titre court qui nomme le thème, sans numéro de coup.
-  - explanation : trois à cinq phrases. Rappelle le coup joué, explique pourquoi il est mauvais en suivant la suite « suite_qui_punit », puis donne le meilleur coup et son idée.
+  - explanation : trois à cinq phrases. Rappelle le coup joué et explique pourquoi il est mauvais en suivant la suite « suite_qui_punit », que l'élève voit rejouée sur le plateau. Ne donne pas le meilleur coup et ne le laisse pas deviner : l'élève doit le trouver lui-même dans l'exercice qui suit.
   - principle : une seule phrase, un principe général à retenir et à réutiliser dans d'autres parties.
   - hints : exactement deux indices pour l'exercice où l'élève doit retrouver le bon coup dans la même position. Le premier oriente sans nommer la pièce ni la case ; le second est plus précis mais ne donne pas le coup.`
 

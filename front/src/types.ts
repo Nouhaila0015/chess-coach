@@ -84,14 +84,17 @@ export interface Lesson {
   ply: number
   fen: string
   played: { san: string; uci: string }
-  best: { san: string; uci: string }
-  accepted: string[]
   punishLine: string[]
-  bestLine: string[]
   title: string
   explanation: string
   principle: string
-  hints: string[]
   ai: boolean
   status: 'new' | 'ok' | 'retry'
+}
+
+export interface AttemptResult {
+  correct: boolean
+  hint?: string
+  solution?: { san: string; uci: string }
+  status: Lesson['status']
 }

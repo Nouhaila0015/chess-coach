@@ -18,6 +18,7 @@ import {
   resign,
   setFlow,
 } from './games.js'
+import { type Lesson, MAX_ATTEMPTS, checkAttempt, getLesson } from './lessons.js'
 import { ReviewRunner } from './reviews.js'
 import type { Tutor } from './tutor.js'
 
@@ -32,6 +33,12 @@ export interface AppOptions {
 // Ce que le front reçoit d'une partie : jamais d'évaluation ni de meilleur coup.
 function publicGame(game: Game) {
   return game
+}
+
+// La solution et les indices de l'exercice restent côté BFF : ils sont donnés au fil des essais.
+function publicLesson(lesson: Lesson) {
+  const { accepted: _accepted, best: _best, bestLine: _bestLine, hints: _hints, ...rest } = lesson
+  return rest
 }
 
 export function createApp({ db, frontDir, engine, tutor }: AppOptions) {
@@ -103,6 +110,18 @@ export function createApp({ db, frontDir, engine, tutor }: AppOptions) {
     const step = req.body?.step
     if (step !== 'lesson' && step !== 'done') throw new GameError('Étape invalide')
     res.json(publicGame(setFlow(db, id(req), step)))
+  })
+
+  app.get('/api/lessons/:id', (req, res) => {
+    res.json(publicLesson(getLesson(db, id(req))))
+  })
+
+  app.post('/api/lessons/:id/attempt', (req, res) => {
+    const { uci, attempt } = req.body ?? {}
+    if (typeof uci !== 'string' || !Number.isInteger(attempt) || attempt < 1 || attempt > MAX_ATTEMPTS) {
+      throw new GameError('Essai invalide')
+    }
+    res.json(checkAttempt(db, id(req), uci, attempt))
   })
 
   app.get('/api/progress', (_req, res) => {

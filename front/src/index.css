@@ -622,3 +622,29 @@ p {
   color: #fff;
   font-weight: 700;
 }
+
+/* Leçon */
+.lesson-board {
+  padding-top: 52px;
+}
+.tries {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 10px;
+}
+.tries i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #4b4946;
+}
+.tries i.fail {
+  background: #ca3431;
+}
+.tries i.ok {
+  background: var(--green);
+}
+.line-cur {
+  color: #fff;
+  font-weight: 700;
+}
