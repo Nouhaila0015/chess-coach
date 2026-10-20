@@ -199,8 +199,9 @@ export async function analyseGame(game: Game, engine: Engine, onProgress: (ratio
       evalBefore: white(i),
       evalAfter: white(i + 1),
       best: isBest ? null : { uci: bestLine.move, san: toSan(fens[i], [bestLine.move])[0] },
-      bestLine: toSan(fens[i], bestLine.pv, 6),
-      playedLine: [m.san, ...toSan(fens[i + 1], after.lines[0]?.pv ?? [], 5)],
+      // Suites assez longues pour voir le matériel gagné ou perdu.
+      bestLine: toSan(fens[i], bestLine.pv, 8),
+      playedLine: [m.san, ...toSan(fens[i + 1], after.lines[0]?.pv ?? [], 7)],
     })
   }
 

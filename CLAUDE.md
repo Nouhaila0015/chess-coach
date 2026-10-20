@@ -117,7 +117,9 @@ Reprend l'apparence de chess.com avec des ressources libres (les images et sons 
   - la pastille de la catégorie s'affiche sur la case d'arrivée du coup ;
   - barre d'évaluation à côté du plateau ;
   - pour un coup qui n'est pas le meilleur, une flèche verte montre le meilleur coup ;
+  - la revue passe directement d'un **moment clé** à l'autre : mes gaffes, erreurs, occasions manquées, coups brillants et excellents coups (s'il n'y en a aucun, elle passe par tous mes coups) ; les autres coups restent accessibles dans la liste et avec les flèches du clavier ;
   - **commentaire du tuteur sur chacun de mes coups**, affiché dans une bulle et lu à voix haute en même temps ;
+  - chaque commentaire donne une **raison concrète** : pièce laissée sans protection, ce que l'ordi prend en réponse, mat qui menace, pièce qui va être perdue, et ce que gagnait le meilleur coup ; jamais un jugement vague comme « ta position se dégrade » ;
   - les coups de l'ordi sont classés et affichés, mais pas commentés ;
   - boutons pour couper la voix et pour réécouter le commentaire.
 - À la fin de la revue, bouton « Voir la leçon ».
@@ -132,7 +134,8 @@ Reprend l'apparence de chess.com avec des ressources libres (les images et sons 
   - Excellent coup : seul coup qui garde l'avantage ou qui sauve la position ;
   - Occasion manquée : je ne punis pas une erreur de l'ordi.
 - Un seul appel à Claude par partie, qui renvoie tous les commentaires et la leçon dans un format structuré.
-- Commentaires courts (1 à 2 phrases), en français, avec tutoiement, adaptés à un niveau débutant.
+- Commentaires courts (1 à 3 phrases), en français, avec tutoiement, adaptés à un niveau débutant.
+- Les raisons concrètes sont calculées par le BFF à partir des suites de Stockfish (matériel gagné ou perdu, pièces en prise, mats). Elles servent aux phrases toutes faites et sont transmises à Claude.
 - Si l'API Claude est indisponible ou si la clé manque, la revue s'affiche quand même, avec des phrases toutes faites à la place des commentaires, et un message le signale.
 - La voix se coupe quand je change de coup, et ne démarre jamais pendant une partie.
 - Durée d'analyse visée : moins de 30 secondes pour une partie de 40 coups.

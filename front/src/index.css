@@ -719,3 +719,36 @@ p {
   height: 100%;
   display: block;
 }
+
+/* Moments clés de la revue */
+.moments {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+.moments button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--panel-2);
+  border-radius: 6px;
+  padding: 7px 10px;
+  text-align: left;
+}
+.moments button:hover {
+  background: #4b4946;
+}
+.moments b {
+  color: #fff;
+  min-width: 90px;
+}
+.moments span:last-child {
+  color: var(--muted);
+  font-size: 13px;
+}
+.moment-count {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
