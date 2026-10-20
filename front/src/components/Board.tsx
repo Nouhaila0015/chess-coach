@@ -52,7 +52,9 @@ export default function Board({ fen, orientation, lastMove, interactive, onMove,
   }, [fen])
 
   useEffect(() => {
+    // Le plateau est créé directement dans le bon sens : retourner un plateau existant le redessine entièrement.
     api.current = Chessground(el.current!, {
+      orientation: orientation === 'w' ? 'white' : 'black',
       coordinates: false,
       animation: { duration: 200 },
       premovable: { enabled: false },
@@ -60,6 +62,7 @@ export default function Board({ fen, orientation, lastMove, interactive, onMove,
       movable: { free: false, events: { after: (from, to) => onMoveRef.current?.(from, to) } },
     })
     return () => api.current?.destroy()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -70,7 +73,8 @@ export default function Board({ fen, orientation, lastMove, interactive, onMove,
       check: info.check,
       lastMove: lastMove as Key[] | undefined,
       selected: undefined,
-      viewOnly: !interactive,
+      // Pas de « viewOnly » : s'il est actif quand le plateau se redessine (changement de sens),
+      // chessground n'attache plus jamais les événements de la souris. On bloque les coups via `movable`.
       movable: { color: interactive ? info.turn : undefined, dests: interactive ? info.dests : new Map() },
     })
   }, [fen, orientation, lastMove, interactive, info, nonce])
