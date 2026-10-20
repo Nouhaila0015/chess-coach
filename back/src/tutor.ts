@@ -4,6 +4,7 @@ import { Chess, type Square } from 'chess.js'
 import { z } from 'zod'
 import type { Game } from './games.js'
 import type { Eval, MoveReview, Review } from './review.js'
+import { explain } from './explain.js'
 import { CATEGORY_FR, PIECE_NAMES, lineFr, sanFr } from './text.js'
 
 // Faits de la leçon, calculés par Stockfish (voir lessons.ts).
@@ -37,47 +38,33 @@ export type Tutor = (ctx: TutorContext) => Promise<TutorTexts | null>
 
 const moveLabel = (m: MoveReview) => lineFr(m.ply, [m.san])
 
-function fallbackComment(m: MoveReview): string {
-  const move = moveLabel(m)
-  const best = m.best ? sanFr(m.best.san) : null
-  const line = lineFr(m.ply, m.playedLine.slice(0, 4))
-  switch (m.category) {
-    case 'book':
-      return `${move} est un coup théorique : tu suis une ouverture connue.`
-    case 'brilliant':
-      return `Brillant ! ${move} sacrifie du matériel, et c'est pourtant le meilleur coup.`
-    case 'great':
-      return `Excellent ! ${move} était le seul bon coup dans cette position.`
-    case 'best':
-      return `${move} est le meilleur coup de la position. Bien joué !`
-    case 'excellent':
-      return best ? `${move} est un très bon coup, presque aussi fort que ${best}.` : `${move} est un très bon coup.`
-    case 'good':
-      return best ? `${move} est un bon coup. ${best} était un peu plus précis.` : `${move} est un bon coup.`
-    case 'inaccuracy':
-      return `${move} est une imprécision. ${best} était meilleur.`
-    case 'miss':
-      return `Occasion manquée : l'ordi venait de se tromper, et ${best} en profitait.`
-    case 'mistake':
-      return `${move} est une erreur : après ${line}, ta position se dégrade. Il fallait jouer ${best}.`
-    case 'blunder':
-      return `${move} est une gaffe : après ${line}, tu perds beaucoup. Le bon coup était ${best}.`
-  }
+const fenBefore = (game: Game, ply: number) => (ply === 0 ? new Chess().fen() : game.moves[ply - 1].fen)
+
+function explainMove(game: Game, review: Review, m: MoveReview) {
+  return explain(fenBefore(game, m.ply), m, m.ply > 0 ? review.moves[m.ply - 1] : undefined)
+}
+
+// Raison concrète de l'erreur, sans dévoiler le meilleur coup.
+function lessonWhy(game: Game, review: Review, worst: MoveReview): string {
+  const why = explainMove(game, review, worst).facts.find((f) => f.startsWith('Problème du coup joué : '))
+  if (!why) return `La suite ${lineFr(worst.ply, worst.playedLine)} est mauvaise pour toi.`
+  const text = why.slice('Problème du coup joué : '.length)
+  return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
 // Phrases toutes faites, utilisées quand l'API Claude est indisponible ou que la clé manque.
 export function fallbackTexts({ game, review, lesson }: TutorContext): TutorTexts {
   const comments: Record<number, string> = {}
-  for (const m of review.moves) if (m.mine) comments[m.ply] = fallbackComment(m)
+  for (const m of review.moves) if (m.mine) comments[m.ply] = explainMove(game, review, m).comment
   const worst = review.moves[lesson.ply]
   const piece = new Chess(lesson.fen).get(lesson.best.uci.slice(0, 2) as Square)
   const outcome = { win: 'Tu as gagné', loss: 'Tu as perdu', draw: 'Partie nulle' }[game.result ?? 'draw']
   return {
-    summary: `${outcome}, avec une précision de ${String(review.accuracy.me).replace('.', ',')} %. Regardons tes coups un par un.`,
+    summary: `${outcome}, avec une précision de ${String(review.accuracy.me).replace('.', ',')} %. Le tournant de la partie : ${moveLabel(worst)}, ${CATEGORY_FR[worst.category].toLowerCase()}. Regardons ensemble les moments clés.`,
     comments,
     lesson: {
       title: `Mon plus mauvais coup : ${moveLabel(worst)}`,
-      explanation: `Dans cette position, tu as joué ${sanFr(lesson.played.san)}. La suite ${lineFr(lesson.ply, lesson.punishLine)} est mauvaise pour toi. Un autre coup était bien meilleur : à toi de le trouver dans l'exercice.`,
+      explanation: `Dans cette position, tu as joué ${moveLabel(worst)}. ${lessonWhy(game, review, worst)} Un autre coup était bien meilleur : à toi de le trouver dans l'exercice.`,
       principle: 'Avant de jouer, regarde les réponses de ton adversaire : échecs, captures et menaces.',
       hints: [
         `Le bon coup se joue avec ${PIECE_NAMES[piece?.type ?? 'p']}.`,
@@ -108,10 +95,14 @@ Les coups sont en notation française (R roi, D dame, T tour, F fou, C cavalier)
 
 Ce que tu dois produire :
 - summary : deux phrases au plus sur l'allure générale de la partie, pour ouvrir la revue.
-- comments : un commentaire pour chacun des coups de l'élève listés dans « coups », avec le même « ply ». Une à deux phrases chacun. Pour un bon coup, dis ce qu'il accomplit. Pour un coup faible, dis ce qui ne va pas et quel était le meilleur coup. Varie les tournures d'un coup à l'autre.
+- comments : un commentaire pour chacun des coups de l'élève listés dans « coups », avec le même « ply ». Une à trois phrases chacun. Chaque commentaire doit donner une raison concrète, jamais un jugement vague comme « ta position se dégrade » ou « tu perds beaucoup » :
+  - pour un coup faible, dis précisément ce qui se passe (quelle pièce n'est plus protégée, ce que l'ordi prend, quel mat menace, quelle menace a été oubliée), puis quel était le meilleur coup et ce qu'il gagnait ou empêchait ;
+  - pour un bon coup, dis ce qu'il accomplit (prise, développement, sécurité du roi, menace créée) ;
+  - pour une occasion manquée, dis quelle erreur de l'ordi n'a pas été punie et comment la punir.
+  Les « faits » de chaque coup sont calculés par le moteur : appuie-toi d'abord sur eux. L'écran affiche déjà le coup et sa catégorie en titre (« 8. Dxd4 est une gaffe ») : ne commence pas par les répéter, va droit à l'explication. Varie les tournures d'un coup à l'autre.
 - lesson : la leçon porte sur le coup indiqué dans « lecon », le plus mauvais de l'élève.
   - title : un titre court qui nomme le thème, sans numéro de coup.
-  - explanation : trois à cinq phrases. Rappelle le coup joué et explique pourquoi il est mauvais en suivant la suite « suite_qui_punit », que l'élève voit rejouée sur le plateau. Ne donne pas le meilleur coup et ne le laisse pas deviner : l'élève doit le trouver lui-même dans l'exercice qui suit.
+  - explanation : trois à cinq phrases. Rappelle le coup joué et explique concrètement pourquoi il est mauvais (pièce perdue, mat, menace oubliée) en suivant la suite « suite_qui_punit », que l'élève voit rejouée sur le plateau. Ne donne pas le meilleur coup et ne le laisse pas deviner : l'élève doit le trouver lui-même dans l'exercice qui suit.
   - principle : une seule phrase, un principe général à retenir et à réutiliser dans d'autres parties.
   - hints : exactement deux indices pour l'exercice où l'élève doit retrouver le bon coup dans la même position. Le premier oriente sans nommer la pièce ni la case ; le second est plus précis mais ne donne pas le coup.`
 
@@ -127,7 +118,6 @@ function evalFr(e: Eval, me: 'w' | 'b'): string {
 
 function buildPrompt({ game, review, lesson }: TutorContext): string {
   const me = game.playerColor
-  const fenBefore = (ply: number) => (ply === 0 ? new Chess().fen() : game.moves[ply - 1].fen)
   const data = {
     couleur_de_l_eleve: me === 'w' ? 'Blancs' : 'Noirs',
     resultat: { win: "victoire de l'élève", loss: "défaite de l'élève", draw: 'partie nulle' }[game.result ?? 'draw'],
@@ -144,7 +134,8 @@ function buildPrompt({ game, review, lesson }: TutorContext): string {
         ply: m.ply,
         coup: moveLabel(m),
         categorie: CATEGORY_FR[m.category],
-        position_avant: fenBefore(m.ply),
+        position_avant: fenBefore(game, m.ply),
+        faits: explainMove(game, review, m).facts,
         evaluation_avant: evalFr(m.evalBefore, me),
         evaluation_apres: evalFr(m.evalAfter, me),
         meilleur_coup: m.best ? sanFr(m.best.san) : 'le coup joué',

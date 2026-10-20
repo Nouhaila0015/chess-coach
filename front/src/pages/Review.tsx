@@ -12,9 +12,10 @@ import { sanFr } from '../format'
 import { navigate } from '../router'
 import { playMove } from '../sounds'
 import { stop } from '../speech'
-import { type Review as ReviewData, type ReviewState, START_FEN } from '../types'
+import { type Category, type Review as ReviewData, type ReviewState, START_FEN } from '../types'
 
 const START_EVAL = { cp: 20, mate: null }
+const KEY_MOMENTS: Category[] = ['blunder', 'mistake', 'miss', 'brilliant', 'great']
 const GRAPH_COLORS: Record<string, string> = { blunder: '#ca3431', mistake: '#e58f2a', miss: '#ee6b55', brilliant: '#1baca6', great: '#5c8bb0' }
 
 function EvalGraph({ review, ply, onSelect }: { review: ReviewData; ply: number; onSelect: (ply: number) => void }) {
@@ -82,6 +83,13 @@ export default function Review({ gameId }: { gameId: number }) {
   const review = state?.review ?? null
   const game = state?.game
   const total = review?.moves.length ?? 0
+  // Moments clés : mes coups marquants. S'il n'y en a aucun, la revue passe par tous mes coups.
+  const keyPlies = useMemo(() => {
+    if (!review) return []
+    const mine = review.moves.filter((m) => m.mine)
+    const key = mine.filter((m) => KEY_MOMENTS.includes(m.category))
+    return (key.length ? key : mine).map((m) => m.ply + 1)
+  }, [review])
 
   // Le rang courant est aussi gardé dans une référence : les appuis rapides au clavier ne se perdent pas.
   const plyRef = useRef(0)
@@ -106,6 +114,10 @@ export default function Review({ gameId }: { gameId: number }) {
   }, [go])
 
   const move = review && ply > 0 ? review.moves[ply - 1] : null
+  const keyIndex = keyPlies.indexOf(ply)
+  const verdict = move ? `${Math.floor(move.ply / 2) + 1}${move.color === 'b' ? '...' : '.'} ${sanFr(move.san)} ${CATEGORY[move.category].verdict}` : ''
+  const nextKey = keyPlies.find((p) => p > ply)
+  const prevKey = [...keyPlies].reverse().find((p) => p < ply)
   const shapes = useMemo<DrawShape[]>(
     () => (move?.best ? [{ orig: move.best.uci.slice(0, 2) as Key, dest: move.best.uci.slice(2, 4) as Key, brush: 'green' }] : []),
     [move],
@@ -162,6 +174,22 @@ export default function Review({ gameId }: { gameId: number }) {
           <div className="scroll">
             <Tutor text={review.summary} />
             {!review.ai && <div className="notice">Tuteur IA indisponible : les commentaires sont des phrases automatiques.</div>}
+            <h3>Moments clés</h3>
+            <div className="moments">
+              {keyPlies.map((p) => {
+                const m = review.moves[p - 1]
+                return (
+                  <button key={p} onClick={() => go(p)}>
+                    <Chip category={m.category} />
+                    <b>
+                      {Math.floor(m.ply / 2) + 1}. {m.color === 'b' && '… '}
+                      {sanFr(m.san)}
+                    </b>
+                    <span>{CATEGORY[m.category].label}</span>
+                  </button>
+                )
+              })}
+            </div>
             <div className="elo-cards">
               <div className="me">
                 Ma précision<b>{review.accuracy.me.toFixed(1).replace('.', ',')}</b>
@@ -194,7 +222,7 @@ export default function Review({ gameId }: { gameId: number }) {
               </tbody>
             </table>
           </div>
-          <button className="btn small" onClick={() => go(1)}>
+          <button className="btn small" onClick={() => go(keyPlies[0] ?? 1)}>
             Commencer la revue
           </button>
         </div>
@@ -207,7 +235,7 @@ export default function Review({ gameId }: { gameId: number }) {
               {sanFr(move.san)} {CATEGORY[move.category].verdict}
             </h2>
             {move.mine ? (
-              <Tutor text={move.comment ?? ''} />
+              <Tutor text={`${verdict}. ${move.comment ?? ''}`}>{move.comment}</Tutor>
             ) : (
               <p className="muted">
                 Coup de l'ordi.{move.best && ` Le meilleur coup était ${sanFr(move.best.san)}.`}
@@ -215,13 +243,17 @@ export default function Review({ gameId }: { gameId: number }) {
             )}
             <EvalGraph review={review} ply={ply} onSelect={go} />
             <MoveList moves={game.moves} ply={ply} onSelect={go} chip={(i) => <Chip category={review.moves[i].category} />} />
+            <p className="moment-count">
+              {keyIndex >= 0 ? `Moment clé ${keyIndex + 1} sur ${keyPlies.length}` : 'Hors des moments clés'} · flèches du clavier : coup par
+              coup
+            </p>
             <div className="row">
-              <button className="btn grey" onClick={() => go(ply - 1)}>
-                ◀ Précédent
+              <button className="btn grey" onClick={() => go(prevKey ?? 0)}>
+                {prevKey ? '◀ Moment précédent' : '◀ Résumé'}
               </button>
-              {ply < total ? (
-                <button className="btn small" onClick={() => go(ply + 1)}>
-                  Suivant ▶
+              {nextKey ? (
+                <button className="btn small" onClick={() => go(nextKey)}>
+                  Moment suivant ▶
                 </button>
               ) : (
                 <button className="btn small" onClick={toLesson}>
